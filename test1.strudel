@@ -1,0 +1,70 @@
+setCpm(136); 
+const aline = "<[3 5] [3 0] [5 7] 7>"; 
+const bline = "<[3 5] [3 0] [5 7] 7>"; 
+const clapRhythm = "<[0 0] [0 1] [0 0] 0>"; 
+const astruct = "<1 1 1 1@4 3 2 1 1@2 1 2 3 1 1 2@3>"; 
+const bstruct = "<1 1@3 1@2 1 1@2 1 1@2 1 1 1@3 1@2 1 1@2 1 1@2 1 1 1 1 1 1@2 1 1@2 1 1@2 1 1 1@2 1 1@2 1 1 1 1 1 1@2 1 1@2 1 1@2 1 1 1 1@2>"; 
+
+let spacesound = s("space") 
+  .n(aline) 
+  .scale("f:minor") 
+  .struct(astruct) 
+  .speed(0.02) 
+  .decay(.8) 
+  .attack(.3) 
+  .fast(2) 
+  .gain(0.2) 
+  .fm(sine) 
+  .lpf(80) 
+  .segment(2) 
+  .room(1); 
+
+let the808 = s("bd") 
+  .bank("RolandTR808") 
+  .n(aline) 
+  .struct(astruct) 
+  .room(1) 
+  .gain(.3);
+
+let padPerc = s("gm_pad_warm")
+  .n(aline) 
+  .struct(bstruct) 
+  .delay(.5) 
+  .room(.5) 
+  .decay(.95) 
+  .gain(1)
+  .segment(2) 
+  .fm(sine) 
+  .note("c e g") 
+  .lpf(perlin.range(100, 2000));
+
+let bdPerc = s("sawtooth") 
+    .n(aline) 
+  .struct(bstruct) 
+  .speed(.1)
+.gain(1);
+
+let secondspace = s("gm_pad_warm")
+    .n(aline) 
+  .struct(bstruct) 
+  .room(1)
+  .speed(cat(.4, shuffle(20))) 
+  .resonance(20)
+.lpf(800)
+  .gain(0.3)
+  .fast(8);
+
+let nextsound = s("<bd sd hh>")
+  .n(aline)
+  .struct(astruct) 
+.gain(0.3)
+  .room(.5)
+  .fm(sine.range(100,2000));
+
+
+$: stack(nextsound).slow(0.5);
+$: stack(secondspace).speed(0.5).delay(.5).room(.8).gain(0.4);
+$: stack(spacesound, the808, bdPerc).speed(15).gain(1);
+$: stack(padPerc).fast(2).speed(1.5).gain(0.25).lpf(1200);
+$: stack(the808).gain(.8).delay(.1).speed(0.832).lpf(800).off(1/16, x => x.speed(1));
+

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strudel REPL Guide</title>
+<style>
+  :root{
+    --bg: #0d1117;
+    --bg-panel: #141c2c;
+    --bg-card: #1a2436;
+    --bg-hover: #1f2a3d;
+    --ink: #dbe4f0;
+    --ink-dim: #8291a8;
+    --rule: #263248;
+    --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+
+    --c-mini:   #f7b955;
+    --c-sound:  #7ee081;
+    --c-fx:     #d888f5;
+    --c-time:   #ff8a65;
+    --c-prob:   #ff6b81;
+    --c-missed: #4dd0c4;
+    --c-ex:     #58a6ff;
+    --c-learn:  #f0883e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html,body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--c-ex); text-decoration: none; }
+
+  #header {
+    padding: 0 12px;
+    margin-bottom: 1px;
+  }
+  #header h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 10px 0 4px;
+    color: var(--ink);
+  }
+  #header p {
+    color: var(--ink-dim);
+    font-size: 0.78rem;
+    padding-bottom: 8px;
+    line-height: 1.5;
+  }
+  .legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.68rem;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .legend span {
+    font-weight: 600;
+  }
+
+  main{
+    padding: 6px 10px 40px;
+    max-width: 100%;
+    margin: 0;
+    column-count: 4;
+    column-gap: 10px;
+  }
+
+  section.cat{
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    overflow: hidden;
+    break-inside: avoid;
+    margin-bottom: 1px;
+  }
+  section.cat.hidden { display: none; }
+
+  .cat-head{
+    display:flex; align-items:center; gap:6px;
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    user-select:none;
+    background: var(--bg-panel);
+  }
+  .cat-head:hover { background: var(--bg-card); }
+  .cat-head .bar{
+    width: 3px; height: 14px; border-radius: 2px; flex:none;
+    background: var(--bar-color, var(--c-ui));
+  }
+  .cat-head .emoji{ font-size: 0.85rem; }
+  .cat-head .title{
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    flex: 1;
+  }
+  .cat-head .arrow{
+    color: var(--ink-dim);
+    font-size: 0.55rem;
+    transition: transform .15s;
+  }
+  .cat.collapsed .arrow { transform: rotate(-90deg); }
+  .cat.collapsed .cat-body { display: none; }
+
+  .cat-body{ padding: 3px 5px 6px; }
+
+  .row{
+    display:flex; align-items:baseline; gap:6px;
+    padding: 1.5px 4px;
+    border-radius: 2px;
+    line-height: 1.3;
+  }
+  .row:hover { background: var(--bg-card); }
+
+  .k{
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--ink);
+    white-space: normal;
+    cursor: pointer;
+    background: rgba(255,255,255,0.03);
+    padding: 1px 3px;
+    border-radius: 2px;
+    flex-shrink: 1;
+    transition: background .12s;
+    min-width: 0;
+  }
+  .k:hover { background: rgba(255,255,255,0.1); }
+
+  .d{
+    color: var(--ink-dim);
+    font-size: 0.68rem;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+
+  .op { font-family: var(--mono); color: var(--ink); font-weight: 600; font-size: 0.68rem; }
+
+  footer{
+    text-align:center;
+    color: var(--ink-dim);
+    font-size: 0.65rem;
+    padding: 6px 12px 24px;
+    font-family: var(--mono);
+  }
+  footer a { color: var(--c-missed); border-bottom: 1px dotted var(--c-missed); }
+
+  .toast{
+    position: fixed;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%) translateY(30px);
+    background: var(--bg-card);
+    border: 1px solid var(--c-ui);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    pointer-events: none;
+    opacity: 0;
+    transition: all .18s;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 900px){
+    main{ column-count: 2; }
+  }
+  @media (max-width: 600px){
+    main{ column-count: 1; }
+    .legend { font-size:0.6rem; gap:8px; }
+  }
+
+  .legend-item { font-weight: 600; }
+  .legend-mini  { color: var(--c-mini); }
+  .legend-sound { color: var(--c-sound); }
+  .legend-fx    { color: var(--c-fx); }
+  .legend-time  { color: var(--c-time); }
+  .legend-prob  { color: var(--c-prob); }
+  .legend-sig   { color: var(--c-missed); }
+  .legend-learn { color: var(--c-learn); }
+  .search-row   { column-span: all; padding: 4px 2px 10px; }
+  .search-input { width: 100%; background: var(--bg-card); border: 1px solid var(--rule); color: var(--ink); padding: 6px 10px; border-radius: 3px; font-family: var(--sans); font-size: 0.8rem; outline: none; }
+  .ex-card      { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 3px; padding: 5px 8px; margin: 3px 0; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+  .ex-label     { font-family: var(--mono); font-size: 0.62rem; color: var(--c-ex); text-transform: uppercase; letter-spacing: 0.04em; }
+  .ex-code      { font-family: var(--mono); font-size: 0.72rem; color: var(--ink); white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+  .tip-learn    { color: var(--ink); font-size: 0.72rem; line-height: 1.5; padding: 4px 6px; border-left: 2px solid var(--c-learn); margin: 2px 0; }
+
+  #repl-panel {
+    margin: 0 12px 8px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    overflow: hidden;
+  }
+  .repl-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  #repl-toggle {
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+  #repl-frame {
+    width: 100%;
+    height: 420px;
+    border: none;
+    display: block;
+    background: #000;
+  }
+  #repl-panel.collapsed #repl-frame { display: none; }
+  #repl-panel.collapsed .repl-header { border-bottom: none; }
+  .legend-repl-link { margin-left: auto; }
+  .legend-repl-link a { color: var(--c-missed); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Strudel REPL Guide</h1>
+  <p>A quick-reference for <a href="https://strudel.cc" target="_blank">strudel.cc</a> — a JavaScript environment for live coding music. Click any code block to copy it into the REPL.</p>
+  <div id="repl-panel">
+    <div class="repl-header">
+      <span>Strudel REPL</span>
+      <button id="repl-toggle" type="button" title="Show / hide REPL">−</button>
+    </div>
+    <iframe id="repl-frame" title="Strudel REPL" src="https://strudel.cc/" sandbox="allow-scripts allow-same-origin allow-forms" loading="lazy"></iframe>
+  </div>
+  <div class="legend">
+    <span class="legend-item legend-mini">Mini-Notation</span>
+    <span class="legend-item legend-sound">Sound / Notes</span>
+    <span class="legend-item legend-sound">Sound Ref</span>
+    <span class="legend-item legend-fx">Effects</span>
+    <span class="legend-item legend-time">Time / Flow</span>
+    <span class="legend-item legend-prob">Probability</span>
+    <span class="legend-item legend-sig">Signals</span>
+    <span class="legend-item legend-learn">Learning</span>
+    <span class="legend-repl-link"><a href="https://strudel.cc" target="_blank">Open REPL ↗</a></span>
+  </div>
+</div>
+
+<main id="main"></main>
+<div class="toast" id="toast">copied!</div>
+
+<footer>
+  click any code to copy &middot; <a href="https://strudel.cc" target="_blank">strudel.cc</a> / <a href="https://strudel.cc/workshop/recap/" target="_blank">recap</a>
+</footer>
+
+<script>
+const DATA = [
+  {
+    id: "start", emoji: "🚀", title: "GET STARTED", color: "var(--c-learn)",
+    desc: "Basic workflow and starter patterns",
+    items: [
+      { type: "tip", html: "Head to <a href='https://strudel.cc' target='_blank'>strudel.cc</a> → paste a block below → <strong>Ctrl+Enter</strong> to play → <strong>Ctrl+.</strong> to stop." },
+      { type: "ex", label: "Basic Beat", code: 'setcpm(100/4)\nsound("bd*4, [- cp]*2, [- hh]*4").bank("RolandTR909")' },
+      { type: "ex", label: "Classic House", code: 'sound("bd*4, [- cp]*2, [- hh]*4").bank("RolandTR909")' },
+      { type: "ex", label: "Rock", code: 'setcpm(81/2)\nsound("bd*2 cp").bank("RolandTR707")' },
+      { type: "ex", label: "Note + Filter", code: 'setcpm(60)\nnote("c2 [eb3,g3]").sound("sawtooth").lpf(800)' },
+      { type: "ex", label: "Stack Layers", code: '$: sound("bd*4, [- cp]*2")\n$: note("c2 [eb3,g3]").sound("sawtooth").lpf(800)' },
+      { type: "ex", label: "Dub", code: '$: note("[~ [<[d3,a3,f4]!2 [d3,bb3,g4]!2> ~]]*2").sound("gm_electric_guitar_muted").delay(.5)\n$: sound("bd rim").bank("RolandTR707").delay(.5)\n$: n("<4 [3@3 4] [<2 0> ~@16] ~>").scale("D4:minor").sound("gm_accordion:2").room(2).gain(.4)' },
+    ]
+  },
+  {
+    id: "mini", emoji: "🥁", title: "MINI-NOTATION", color: "var(--c-mini)",
+    desc: "The mini-language for writing rhythmic patterns inside quotes.",
+    items: [
+      ['"bd sd"', "Space separates steps over time"],
+      ['"bd [sd hh]"', "Brackets pick a random step from inside"],
+      ['"bd [sd hh, cp]"', "Comma plays sounds together at the same time"],
+      ['"bd*4"', "Star repeats a sound to fill a cycle (4× faster)"],
+      ['"bd/2"', "Slash slows a sound down (half the speed)"],
+      ['"bd ~ sd"', "Tilde is a silent step (rest)"],
+      ['"<bd sd hh>"', "Angle brackets cycle through choices each time"],
+      ['"bd(3,8)"', "Parentheses are Euclidean rhythms: spread 3 hits over 8 steps"],
+      ['"hh:2"', "Colon picks sample #2 from the same sound family"],
+      ['"bd!3"', "Bang repeats the LAST sound 3 times"],
+      ['"bd@3"', "At symbol stretches one step to fill 3 substeps"],
+      ['"{bd, hh+2}"', "Curly braces make a polyrhythm (patterns of different lengths combined)"],
+      ['"bd _ sd"', "Underscore doubles the length of ONE step (elongation)"],
+    ]
+  },
+  {
+    id: "snd", emoji: "🎹", title: "SOUND / NOTES", color: "var(--c-sound)",
+    desc: "Triggering drums, samples, and melodic notes.",
+    items: [
+      ['s("bd")', "Play a single sample by name"],
+      ['bank("TR909")', "Use a whole drum machine bank"],
+      ['note("c e g")', "Play note names (use .scale for context)"],
+      ['n("0 2 4")', "Play notes by number instead of name (0-based)"],
+      ['.scale("C:minor")', "Set the musical scale and root"],
+      ['.sound("piano")', "Choose a synth or sample instrument"],
+      ['setcpm(120)', "Set tempo in cycles per minute"],
+      ['$: pat', "Stack a new pattern (alias for 'stack')"],
+      ['stack(a,b)', "Explicitly stack multiple patterns"],
+      ['cat(a,b)', "Concatenate patterns one after another"],
+      ['hush()', "Stop everything immediately"],
+    ]
+  },
+  {
+    id: "sndref", emoji: "🔊", title: "SOUND REFERENCE", color: "var(--c-sound)",
+    desc: "Default short-name drums, banks, synths, and instruments loaded out of the box.",
+    items: [
+      ['bd', 'Bass drum / kick'],
+      ['sd', 'Snare drum'],
+      ['hh', 'Closed hi-hat'],
+      ['oh', 'Open hi-hat'],
+      ['cp', 'Clap'],
+      ['ht / mt / lt', 'High / mid / low tom'],
+      ['rim', 'Rimshot'],
+      ['cb', 'Cowbell'],
+      ['cr', 'Crash cymbal'],
+      ['rd', 'Ride cymbal'],
+      ['sh', 'Shaker'],
+      ['tb', 'Tambourine'],
+      ['perc', 'General percussion'],
+      ['misc', 'Miscellaneous / fx'],
+      ['casio', 'Casio keyboard sounds'],
+      ['crow', 'Crow vocalizations'],
+      ['insect', 'Insect / bugs'],
+      ['wind', 'Wind / air'],
+      ['jazz', 'Jazz'],
+      ['metal', 'Metal impacts'],
+      ['east', 'Eastern / tabla / sitar'],
+      ['space', 'Space / sci-fi'],
+      ['numbers', 'Numbers / counting'],
+      ['tabla', 'Indian tabla'],
+      ['sitar', 'Indian sitar'],
+      ['jvbass', 'Jazz bass guitar'],
+      ['speakspell', 'Speak and Spell'],
+      { type: "tip", html: "<strong>Drum Machine Banks</strong> — pair with .bank(\"Name\")" },
+      ['RolandTR808', '808 boomy / deep (hip-hop, electro)'],
+      ['RolandTR909', '909 punchy / snappy (house, techno)'],
+      ['RolandTR707', '707 classic 80s Roland'],
+      ['RolandTR606', '606 small drum kit'],
+      ['RolandTR505 / RolandTR727', '1986 rock+Latin 8-bit / 1985 Latin digital kit'],
+      ['AkaiLinn / AkaiMPC60', 'Linn 80s sampled drums / 12-bit MPC warmth'],
+      ['RhythmAce / KorgMinipops', 'Ace Tone / Korg vintage presets, quirky character'],
+      ['LinnDrum / OberheimDMX / EmuDrumulator / EmuSP12 / MFB512', 'Linn=82 clean / DMX=80s staple / Drumulator=emu vintage / SP12=12-bit hip-hop / MFB=German analog'],
+      ['RolandCompurhythm78 / RolandCompurhythm8000', '78=warm analog new-wave / 8000=earthy shuffle groove'],
+      ['RolandCompurhythm1000', '1981 analog, classic electronic drum sounds'],
+      ['ViscoSpaceDrum / CasioRZ1', 'Spacey textures / 12-bit 80s lo-fi hip-hop'],
+      ['YamahaRM50 / CasioRZ1', 'Yamaha ROM module / 80s Casio 12-bit sampler'],
+      { type: "tip", html: "<strong>Synths &amp; Noise</strong> — real-time generated sounds" },
+      ['sine', 'pure sine wave'],
+      ['triangle', 'soft, flute-like (default for note/freq)'],
+      ['square', 'hollow, 8-bit style'],
+      ['sawtooth', 'bright, buzzy'],
+      ['white', 'white noise'],
+      ['pink', 'pink noise'],
+      ['brown', 'brown noise'],
+      { type: "tip", html: "<strong>Instruments</strong> — pitched &amp; tonal samples" },
+      ['piano', 'pitched piano (VCSL)'],
+      ['kalimba / vibraphone / marimba / xylophone', 'VCSL orchestral percussion'],
+      ['glockenspiel / tubularbells / harp', 'VCSL tuned percussion + harp'],
+      ['sax / organ / pipeorgan / wineglass', 'VCSL winds + more'],
+      ['psaltery_bow / recorder_bass_sus', 'VCSL plucks + reeds'],
+      ['gm_violin / gm_cello / gm_string_ensemble', 'General MIDI strings'],
+      ['gm_flute / gm_choir_aahs', 'General MIDI winds + choir'],
+      ['gm_pad_sweep / gm_pad_warm / gm_pad_synth', 'General MIDI pads'],
+      ['gm_lead_saw / gm_lead_square / gm_lead_sine', 'General MIDI synth leads'],
+      ['amen1 / amen2 / amen3', 'Dough-Amen breakbeats'],
+      ['mridangam', 'South Indian drum (ka nam ta ki dhin…)'],
+      ['crate_djembe / crate_conga / crate_bongo', 'eddyflux/crate world percussion'],
+      ['crate_clave / crate_bell / crate_rim / crate_stick', 'eddyflux/crate percussion'],
+      ['crate_perc / crate_sh / crate_bd / crate_sd / crate_hh / crate_oh', 'eddyflux/crate more drums'],
+    ]
+  },
+  {
+    id: "fx", emoji: "🎛️", title: "EFFECTS", color: "var(--c-fx)",
+    desc: "Real-time audio effects chained onto any pattern.",
+    items: [
+      ['.gain(.8)', "Volume from 0 (silent) to 1 (full)"],
+      ['.pan("0 1")', "Stereo position: -1 far left, 0 center, 1 far right"],
+      ['.room(.5)', "Amount of reverb / space (0 = dry, 1 = large)"],
+      ['.delay(.5)', "Echo / delay time in beats"],
+      ['.lpf(1000)', "Low-pass filter: remove frequencies above 1000 Hz"],
+      ['.hpf(500)', "High-pass filter: remove frequencies below 500 Hz"],
+      ['.bpf(800)', "Band-pass filter: keep only frequencies around 800 Hz"],
+      ['.vowel("a")', "Vowel formant filter (a, e, i, o, u)"],
+      ['.speed(1.5)', "Playback speed multiplier"],
+      ['.legato(1)', "Note overlap: 1 = notes hold fully, 0 = short gap"],
+      ['.attack(.1)', "ADSR: how fast the sound reaches full volume"],
+      ['.decay(.1)', "ADSR: how fast it drops from attack to sustain"],
+      ['.sustain(.5)', "ADSR: the steady volume while holding the note"],
+      ['.release(.2)', "ADSR: how fast the sound fades after release"],
+      ['.fm(sine)', "Apply FM synthesis with a sine carrier"],
+      ['.shape(.3)', "Distortion amount (0 = clean, 1 = fuzz)"],
+      ['.color("cyan")', "Pianoroll note color for visual feedback"],
+      ['.size(4)', "3D spatial projection size"],
+    ]
+  },
+  {
+    id: "time", emoji: "⏳", title: "TIME / FLOW", color: "var(--c-time)",
+    desc: "Transforming when and how patterns play.",
+    items: [
+      ['.fast(2)', "Play pattern at twice the speed"],
+      ['.slow(2)', "Play pattern at half the speed"],
+      ['.rev()', "Reverse the pattern in time"],
+      ['.jux(rev)', "Apply an effect only to the RIGHT channel (stereo split)"],
+      ['.off(1/8,f)', "Offset a copy of the pattern by 1/8 beat and apply effect f"],
+      ['.early(.5)', "Shift every event earlier by 0.5 beats"],
+      ['.late("0 .01")', "Shift events later by a pattern of offsets"],
+      ['.chunk(4,f)', "Split cycle into 4 chunks and apply f to each independently"],
+      ['.every(4,f)', "Apply effect f once every 4 cycles"],
+      ['.iter(4)', "Rotate the starting point by 4 steps"],
+      ['.ply(2)', "Repeat every event 2 times (layering)"],
+      ['.segment(8)', "Quantize a signal into 8 discrete steps"],
+      ['.mask("1 0 1")', "Silence steps where mask is 0"],
+      ['.struct("1 0 1")', "Shape any signal with a binary pattern"],
+    ]
+  },
+  {
+    id: "prob", emoji: "🎲", title: "PROBABILITY", color: "var(--c-prob)",
+    desc: "Adding chance and randomness to patterns.",
+    items: [
+      ['"bd? hh"', "Question mark removes a step with ~50% chance"],
+      ['.degradeBy(.2)', "Randomly drop 20% of events (20% less density)"],
+      ['.scramble(4)', "Randomly shuffle the order of 4 items"],
+      ['.shuffle(4)', "Shuffle order of 4 consecutive steps (preserves pairs)"],
+      ['.often(f)', "Apply f roughly 75% of the time"],
+      ['.rarely(f)', "Apply f roughly 25% of the time"],
+      ['.sometimes(f)', "Apply f roughly 50% of the time"],
+      ['.almostAlways(f)', "Apply f roughly 90% of the time"],
+      ['.almostNever(f)', "Apply f roughly 10% of the time"],
+    ]
+  },
+  {
+    id: "adv", emoji: "🧩", title: "ADVANCED", color: "var(--c-ex)",
+    desc: "Pitch manipulation, signals, and deeper synthesis.",
+    items: [
+      ['.add(3)', "Add a value to every number in the pattern"],
+      ['.transpose(3)', "Shift all pitches up by 3 semitones"],
+      ['.add(12)', "Octave up by adding 12 semitones"],
+      ['.range(0,1)', "Scale a signal to fit between 0 and 1"],
+      ['.clip(0.5)', "Limit a signal so values never exceed 0.5"],
+      ['.lpq(5)', "Low-pass filter resonance (Q factor)"],
+      ['.resonance(15)', "Filter resonance / sharpness"],
+      ['.sustain(0.5)', "ADSR: how long the note holds"],
+      ['.release(0.2)', "ADSR: fade-out time after note ends"],
+      ['.mode("root:g2")', "Set scale root and mode (e.g. major, minor)"],
+      ['.voicing()', "Automatic chord voicing (spread notes)"],
+      ['.anchor("D5")', "Pitch anchor: center harmony around D5"],
+      ['.palindrome()', "Play pattern forward then backward"],
+      ['.someCyclesBy(.3,f)', "Apply f to roughly 30% of cycles"],
+      ['.within(0,.5,f)', "Apply f only to first half of each cycle"],
+      ['.compress(.25,.75,f)', "Squeeze or stretch time with a function"],
+    ]
+  },
+  {
+    id: "sig", emoji: "🌊", title: "SIGNALS", color: "var(--c-missed)",
+    desc: "Math functions that create control signals over time.",
+    items: [
+      ['sine', "Sine wave that smoothly goes 0 → 0.5 → 0"],
+      ['saw', "Sawtooth wave: rises linearly then jumps back"],
+      ['square', "Square wave: snaps between 0 and 1"],
+      ['tri', "Triangle wave: smooth up and down"],
+      ['rand', "Pure random value every step"],
+      ['perlin', "Smooth random walk (Perlin noise)"],
+      ['sine.range(100,2000)', "Sine wave mapped between min and max values"],
+      ['saw.range(500,2000)', "Sawtooth mapped between a frequency range"],
+      ['.slow(4)', "Slow a signal down by 4×"],
+      ['.fast(4)', "Speed a signal up by 4×"],
+      ['.segment(8)', "Turn a smooth signal into 8 discrete steps"],
+      ['.loopN(8)', "Loop the signal over exactly 8 steps"],
+    ]
+  },
+  {
+    id: "tip", emoji: "💡", title: "TIPS", color: "var(--c-learn)",
+    desc: "Fundamental concepts to internalize early.",
+    items: [
+      { type: "tip", html: "<strong>Ctrl+Enter</strong> = play or update. <strong>Ctrl+.</strong> = panic stop." },
+      { type: "tip", html: "Everything loops by default. Use <strong>$:</strong> to stack independent patterns. Use <strong>//</strong> for comments." },
+      { type: "tip", html: "A <strong>cycle</strong> is one loop (default 2 seconds at 30 CPM). Inside mini-notation <strong>*</strong> splits faster and <strong>/</strong> splits slower. Outside, use <strong>.fast()</strong> and <strong>.slow()</strong>." },
+      { type: "tip", html: "Strudel is basically JavaScript-powered TidalCycles. If you know Tidal, the patterns transfer almost directly with minor syntax tweaks." },
+      { type: "tip", html: "<strong>$:</strong> is the most important operator — it creates a new 'voice' so sounds overlap instead of replacing each other." },
+      { type: "tip", html: "Spacing matters! <code>\"bd sd\"</code> and <code>\"bd sd\"</code> are identical, but <code>\"bdsd\"</code> is just one long sample name — be deliberate with your spaces." },
+    ]
+  },
+];
+
+let searchTerm = '';
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 900);
+  });
+}
+
+function matchesFilter(item) {
+  if (!searchTerm) return true;
+  const term = searchTerm.toLowerCase();
+  if (typeof item === 'string') return item.toLowerCase().includes(term);
+  if (item.code) return item.code.toLowerCase().includes(term);
+  if (item.html) return item.html.toLowerCase().includes(term);
+  if (item.label) return item.label.toLowerCase().includes(term);
+  return true;
+}
+
+function render() {
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  // Search input at top of main grid
+  const searchRow = document.createElement('div');
+  searchRow.className = 'search-row';
+  searchRow.innerHTML = `<input type="text" id="search" placeholder="filter patterns..." class="search-input">`;
+  main.appendChild(searchRow);
+
+  const searchInput = searchRow.querySelector('#search');
+  searchInput.addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    renderBody();
+  });
+
+  renderBody();
+}
+
+function renderBody() {
+  const main = document.getElementById('main');
+
+  DATA.forEach(cat => {
+    if (searchTerm) {
+      const hasVisible = cat.items.some(matchesFilter);
+      if (!hasVisible) return;
+    }
+
+    const section = document.createElement('section');
+    section.className = 'cat';
+    section.dataset.id = cat.id;
+
+    section.style.setProperty('--bar-color', cat.color);
+    section.dataset.barColor = cat.color;
+    const head = document.createElement('div');
+    head.className = 'cat-head';
+    head.innerHTML = `<span class="bar"></span><span class="emoji">${cat.emoji}</span><span class="title">${cat.title}</span><span class="arrow">▼</span>`;
+    head.addEventListener('click', () => section.classList.toggle('collapsed'));
+    section.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'cat-body';
+
+    if (cat.id === 'start') {
+      cat.items.forEach(item => {
+        if (!matchesFilter(item)) return;
+        if (item.type === 'tip') {
+          const tip = document.createElement('div');
+          tip.className = 'tip';
+          tip.innerHTML = item.html;
+          body.appendChild(tip);
+        } else if (item.type === 'ex') {
+          const div = document.createElement('div');
+          div.className = 'row ex-card';
+          div.innerHTML = `<div class="ex-label">${item.label}</div><code class="ex-code">${escapeHtml(item.code)}</code>`;
+          div.addEventListener('click', () => copyText(item.code));
+          body.appendChild(div);
+        }
+      });
+    } else if (cat.id === 'tip') {
+      cat.items.forEach(item => {
+        if (!matchesFilter(item)) return;
+        const tip = document.createElement('div');
+        tip.className = 'tip tip-learn';
+        tip.innerHTML = item.html;
+        body.appendChild(tip);
+      });
+    } else {
+      cat.items.forEach(item => {
+        if (!matchesFilter(item)) return;
+
+        if (item.type === 'tip') {
+          const tip = document.createElement('div');
+          tip.className = 'tip';
+          tip.innerHTML = item.html;
+          body.appendChild(tip);
+        } else if (item.length === 2) {
+          const div = document.createElement('div');
+          div.className = 'row';
+          div.innerHTML = `<span class="k" title="click to copy">${escapeHtml(item[0])}</span><span class="d">${item[1]}</span>`;
+          div.querySelector('.k').addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(item[0]);
+          });
+          body.appendChild(div);
+        }
+      });
+    }
+
+    section.appendChild(body);
+    main.appendChild(section);
+  });
+}
+
+renderBody();
+
+const replPanel = document.getElementById('repl-panel');
+const replToggle = document.getElementById('repl-toggle');
+replToggle.addEventListener('click', () => {
+  replPanel.classList.toggle('collapsed');
+  replToggle.textContent = replPanel.classList.contains('collapsed') ? '+' : '−';
+});
+</script>
+
+</body>
+</html>

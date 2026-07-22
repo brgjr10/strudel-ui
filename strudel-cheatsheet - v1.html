@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strudel Quick Reference</title>
+<style>
+  :root{
+    --bg: #0e1420;
+    --bg-panel: #141c2c;
+    --bg-card: #1a2436;
+    --ink: #dbe4f0;
+    --ink-dim: #8291a8;
+    --rule: #263248;
+    --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+
+    --c-ui:     #5ec8f7;
+    --c-mini:   #f7b955;
+    --c-sound:  #7ee081;
+    --c-fx:     #d888f5;
+    --c-time:   #ff8a65;
+    --c-prob:   #ff6b81;
+    --c-missed: #4dd0c4;
+  }
+
+  * { box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  header{
+    position: sticky; top:0; z-index:10;
+    background: linear-gradient(180deg, var(--bg) 60%, rgba(14,20,32,0.85));
+    backdrop-filter: blur(6px);
+    padding: 18px 28px 14px;
+    border-bottom: 1px solid var(--rule);
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+
+  .cycle-mark{
+    width:40px; height:40px; flex:none;
+  }
+
+  header h1{
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    margin: 0;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  header h1 span{ color: var(--ink-dim); font-weight:400; }
+
+  .legend{
+    margin-left:auto;
+    display:flex; gap:10px; flex-wrap:wrap;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+  }
+  .legend .dot{
+    display:inline-flex; align-items:center; gap:5px;
+    color: var(--ink-dim);
+    cursor:pointer;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    transition: border-color .15s, color .15s;
+    user-select:none;
+  }
+  .legend .dot:hover{ color: var(--ink); }
+  .legend .dot.off{ opacity:0.3; }
+  .legend .swatch{ width:8px; height:8px; border-radius:50%; }
+
+  main{
+    padding: 20px 28px 60px;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+
+  section.category{
+    background: var(--bg-panel);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: opacity .2s;
+  }
+  section.category.hidden{ display:none; }
+
+  .cat-head{
+    display:flex; align-items:center; gap:9px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    font-weight:600;
+    letter-spacing: 0.01em;
+  }
+  .cat-head .bar{
+    width: 4px; height: 18px; border-radius: 2px; flex:none;
+  }
+  .cat-head .emoji{ font-size: 1rem; }
+
+  .cards{ padding: 8px 10px 12px; }
+
+  .card{
+    padding: 9px 10px;
+    border-radius: 7px;
+    margin-bottom: 4px;
+  }
+  .card:hover{ background: var(--bg-card); }
+
+  .code{
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    color: var(--ink);
+    background: rgba(255,255,255,0.04);
+    padding: 2px 6px;
+    border-radius: 5px;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  .desc{
+    color: var(--ink-dim);
+    font-size: 0.82rem;
+    margin-top: 4px;
+    line-height: 1.35;
+  }
+  .desc .op{
+    font-family: var(--mono);
+    color: var(--ink);
+    font-weight:600;
+  }
+  .arrow{ color: var(--ink-dim); margin: 0 2px; }
+
+  footer{
+    text-align:center;
+    color: var(--ink-dim);
+    font-size: 0.75rem;
+    padding: 10px 20px 40px;
+    font-family: var(--mono);
+  }
+  footer a{ color: var(--c-missed); text-decoration:none; border-bottom: 1px dotted var(--c-missed); }
+
+  .missed-note{
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+    padding: 2px 16px 10px;
+    border-bottom: 1px solid var(--rule);
+    margin-top:-1px;
+  }
+
+  @media (max-width: 700px){
+    header{ padding: 14px 16px; }
+    main{ padding: 14px 16px 40px; grid-template-columns: 1fr; }
+    .legend{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="cycle-mark" viewBox="0 0 40 40" fill="none">
+    <circle cx="20" cy="20" r="17" stroke="#4dd0c4" stroke-width="2" opacity="0.6"/>
+    <circle cx="20" cy="20" r="17" stroke="#5ec8f7" stroke-width="2" stroke-dasharray="9 97" stroke-linecap="round" transform="rotate(-90 20 20)"/>
+    <circle cx="20" cy="3" r="2.2" fill="#f7b955"/>
+    <circle cx="20" cy="20" r="2" fill="#dbe4f0"/>
+  </svg>
+  <h1>strudel<span>()</span> <span>quick reference</span></h1>
+  <div class="legend" id="legend"></div>
+</header>
+
+<main id="main"></main>
+
+<footer>
+  keep this open beside the REPL &middot; source: <a href="https://strudel.cc" target="_blank">strudel.cc</a> / <a href="https://strudel.cc/workshop/recap/" target="_blank">workshop recap</a>
+</footer>
+
+<script>
+const DATA = [
+  {
+    id: "ui", emoji: "⚡", title: "Shortcuts & UI Controls", color: "var(--c-ui)",
+    items: [
+      ["Ctrl+Enter / Cmd+Enter", "Play or live-update the code block."],
+      ["Ctrl+. / Cmd+.", "Panic stop — silences all sound immediately."],
+      ["Ctrl+/ / Cmd+/", "Toggle line comment."],
+    ]
+  },
+  {
+    id: "mini", emoji: "🥁", title: "Mini-Notation (String Sequences)", color: "var(--c-mini)",
+    items: [
+      ['"bd sd"', "Space splits the cycle into equal steps."],
+      ['"bd [sd hh]"', "<span class='op'>[ ]</span> packs a sub-sequence into a single step."],
+      ['"bd [sd hh, cp cp]"', "<span class='op'>,</span> plays steps simultaneously inside a subgroup."],
+      ['"bd*4"', "<span class='op'>*</span> multiplies a step's trigger rate."],
+      ['"bd/2"', "<span class='op'>/</span> slows a step to trigger once every X cycles."],
+      ['"bd ~ sd"', "<span class='op'>~</span> inserts a rest / blank step."],
+      ['"&lt;bd sd&gt;"', "<span class='op'>&lt; &gt;</span> alternates sounds one cycle at a time."],
+      ['"bd(3,8)"', "<span class='op'>(x,y)</span> Euclidean rhythm — 3 hits over 8 steps."],
+      ['"hh:2"', "<span class='op'>:x</span> selects sample variation index 2."],
+    ]
+  },
+  {
+    id: "sound", emoji: "🎹", title: "Sound Sources & Structure", color: "var(--c-sound)",
+    items: [
+      ['s("bd")', "Chooses the sample or synth voice."],
+      ['note("0 4 7")', "Sets scale-step or pitch offsets."],
+      ['n("c3 e3 g3")', "Explicit note names and octaves."],
+      ['freq(440)', "Explicit Hz frequency."],
+      ['stack(a, b)', "Layers multiple patterns together."],
+      ['cat(a, b)', "Concatenates patterns one after another."],
+      ['setcps(0.5)', "Global tempo in cycles/sec (0.5 = 120 BPM)."],
+    ]
+  },
+  {
+    id: "fx", emoji: "🎛️", title: "Audio Effects & Track Modifiers", color: "var(--c-fx)",
+    items: [
+      ['.gain(0.8)', "Master volume, 0 to 1."],
+      ['.pan(0.5)', "Stereo position (0 = left, 1 = right)."],
+      ['.room(0.5)', "Size of the global reverb tail."],
+      ['.delay(0.5)', "Echo feedback amount."],
+      ['.cutoff(1000)', "Lowpass filter frequency in Hz."],
+      ['.resonance(15)', "Filter sharpness / emphasis."],
+      ['.vowel("a")', "Human formant vocal filter."],
+      ['.legato(1)', "Overlap duration of sequential notes."],
+    ]
+  },
+  {
+    id: "time", emoji: "⏳", title: "Time & Flow Utilities", color: "var(--c-time)",
+    items: [
+      ['.fast(2)', "Speeds up local playback rate."],
+      ['.slow(2)', "Stretches loop duration by divisor."],
+      ['.rev()', "Flips the pattern backward."],
+      ['.chunk(4, f)', "Applies f to every 4th step segment, cycling."],
+      ['.every(4, f)', "Applies f once every 4 cycles."],
+      ['.jux(f)', "Applies f only to the right audio channel."],
+    ]
+  },
+  {
+    id: "prob", emoji: "🎲", title: "Mathematical Probabilities", color: "var(--c-prob)",
+    items: [
+      ['"bd? hh"', "<span class='op'>?</span> randomly drops that step ~50%."],
+      ['.degradeBy(0.2)', "Drops overall event density by 20%."],
+      ['.scramble(4)', "Splits bar into 4 parts, randomizes order."],
+      ['.shuffle(4)', "Reorders steps, keeps a consistent cycle pool."],
+    ]
+  },
+  {
+    id: "missed", emoji: "✨", title: "What You Might Be Missing", color: "var(--c-missed)", note: "Common Strudel building blocks not in your original list.",
+    items: [
+      ['"bd!3"', "<span class='op'>!</span> repeats the previous step N times."],
+      ['"bd@3 sd"', "<span class='op'>@</span> weights a step's relative duration."],
+      ['"bd _ _ sd"', "<span class='op'>_</span> elongates the previous step by one unit."],
+      ['"{bd sd, hh hh hh}"', "<span class='op'>{ }</span> polymeter — patterns of different lengths, same tempo."],
+      ['.often(f) / .rarely(f)', "Applies f ~75% / ~25% of the time."],
+      ['.sometimes(f) / .almostAlways(f) / .almostNever(f)', "More probability shorthands, ~50% / ~90% / ~10%."],
+      ['.someCyclesBy(0.3, f)', "Applies f to ~30% of whole cycles (not per-step)."],
+      ['.scale("major")', 'Maps note() numbers onto a named scale.'],
+      ['.transpose(3) / note("0 2").add(12)', "Shifts pitch; arithmetic works directly on note patterns."],
+      ['.off(0.125, f)', "Layers a delayed, transformed copy of the pattern."],
+      ['.ply(2)', "Repeats each event in place N times."],
+      ['.iter(4)', "Rotates the pattern's start point by 1/4 each cycle."],
+      ['.palindrome()', "Plays forward then backward on alternating cycles."],
+      ['.segment(8)', "Samples a continuous signal (e.g. sine) into 8 discrete steps."],
+      ['.range(0, 10)', "Rescales a 0–1 signal to a custom min/max."],
+      ['.struct("1 0 1 1")', "Applies a boolean rhythm template to a pattern."],
+      ['samples({bd: [...]})', "Loads custom sample sets by URL/name."],
+      ['setcpm(120)', "Sets tempo directly in cycles-per-minute (alt to setcps)."],
+      ['hush()', "Stops all playing patterns (like panic, callable in code)."],
+      ['$: <pattern>', "Shorthand to run several top-level patterns at once, no stack() needed."],
+      ['.attack(0.01).decay(0.1).sustain(0.5).release(0.2)', "Full ADSR envelope shaping."],
+      ['.lpf(1000) / .hpf(500) / .bpf(800)', "Shorthand aliases for low/high/band-pass cutoff."],
+      ['.within(0, 0.5, f)', "Applies f only within a portion of the cycle."],
+      ['.compress(0.25, 0.75, pat)', "Squeezes a pattern into part of the cycle, silent elsewhere."],
+    ]
+  },
+];
+
+const main = document.getElementById('main');
+const legend = document.getElementById('legend');
+
+DATA.forEach(cat => {
+  const section = document.createElement('section');
+  section.className = 'category';
+  section.dataset.id = cat.id;
+  section.style.setProperty('--accent', cat.color);
+
+  const head = document.createElement('div');
+  head.className = 'cat-head';
+  head.innerHTML = `<span class="bar" style="background:${cat.color}"></span><span class="emoji">${cat.emoji}</span><span>${cat.title}</span>`;
+  section.appendChild(head);
+
+  if (cat.note) {
+    const note = document.createElement('div');
+    note.className = 'missed-note';
+    note.textContent = cat.note;
+    section.appendChild(note);
+  }
+
+  const cards = document.createElement('div');
+  cards.className = 'cards';
+  cat.items.forEach(([code, desc]) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<span class="code">${code}</span><div class="desc">${desc}</div>`;
+    cards.appendChild(card);
+  });
+  section.appendChild(cards);
+  main.appendChild(section);
+
+  const dot = document.createElement('div');
+  dot.className = 'dot';
+  dot.dataset.id = cat.id;
+  dot.innerHTML = `<span class="swatch" style="background:${cat.color}"></span>${cat.title.split(' ')[0]}`;
+  dot.addEventListener('click', () => {
+    dot.classList.toggle('off');
+    section.classList.toggle('hidden');
+  });
+  legend.appendChild(dot);
+});
+</script>
+
+</body>
+</html>
